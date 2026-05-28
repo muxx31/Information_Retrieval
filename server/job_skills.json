@@ -1,0 +1,42 @@
+[
+  {
+    "title": "Software Engineer",
+    "skills": ["Python", "JavaScript", "Git", "REST API", "SQL"]
+  },
+  {
+    "title": "Data Scientist",
+    "skills": ["Python", "Machine Learning", "Statistics", "Data Visualization", "SQL"]
+  },
+  {
+    "title": "Frontend Developer",
+    "skills": ["JavaScript", "React", "CSS", "HTML", "Git"]
+  },
+  {
+    "title": "Backend Developer",
+    "skills": ["Node.js", "Express", "MongoDB", "REST API", "Docker"]
+  },
+  {
+    "title": "DevOps Engineer",
+    "skills": ["Docker", "Kubernetes", "CI/CD", "AWS", "Linux"]
+  },
+  {
+    "title": "Machine Learning Engineer",
+    "skills": ["Python", "TensorFlow", "PyTorch", "Machine Learning", "Data Structures"]
+  },
+  {
+    "title": "Mobile App Developer",
+    "skills": ["Java", "Kotlin", "Swift", "React Native", "Git"]
+  },
+  {
+    "title": "Database Administrator",
+    "skills": ["SQL", "NoSQL", "Database Design", "Backup & Recovery", "Performance Tuning"]
+  },
+  {
+    "title": "QA Engineer",
+    "skills": ["Testing", "Automation", "Selenium", "JavaScript", "Bug Tracking"]
+  },
+  {
+    "title": "Cloud Engineer",
+    "skills": ["AWS", "Azure", "Cloud Security", "Terraform", "Linux"]
+  }
+]

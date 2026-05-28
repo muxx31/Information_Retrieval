@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.env
+.env
+storage/
+*.sqlite3
+*.log
+venv/
+env/
+.idea/
+.DS_Store
+
+# VSCode
+.vscode/
+
+# Node / React
+node_modules/
+dist/
+build/
+.npm/
+npm-debug.log
+yarn-error.log
+*.local
+*.lock
+
+# OS-generated files
+Thumbs.db
+.DS_Store

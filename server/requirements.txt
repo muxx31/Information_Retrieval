@@ -1,0 +1,16 @@
+fastapi
+uvicorn
+python-multipart
+PyMuPDF
+faiss-cpu
+langchain
+langchain-community
+langchain-openai
+sentence-transformers
+motor
+python-jose[cryptography]
+passlib[bcrypt]
+python-dotenv
+dnspython
+openai
+requests
