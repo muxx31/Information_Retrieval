@@ -47,38 +47,75 @@ The project uses Retrieval Augmented Generation (RAG), where relevant informatio
 ---
 
 ## System Architecture
-          React Frontend
-                |
-                |
-          Axios API Calls
-                |
-                v
-         FastAPI Backend
-                |
-    --------------------------
-    |                        |
-    Authentication Document Pipeline
-| |
-MongoDB PDF Processing
-|
-v
-Text Extraction
-|
-v
-Text Chunking
-|
-v
-Embeddings Model
-|
-v
-FAISS Index
-|
-v
-Retriever + LLM
-|
-v
-Generated Answer
 
+```text
+                         User
+                          |
+                          v
+                +------------------+
+                |  React Frontend  |
+                | (Vite + Axios)   |
+                +------------------+
+                          |
+                          |
+                    API Requests
+                          |
+                          v
+                +------------------+
+                | FastAPI Backend  |
+                +------------------+
+                          |
+          --------------------------------
+          |                              |
+          v                              v
+
+ +------------------+          +-----------------------+
+ | Authentication   |          |  Document Processing  |
+ |                  |          |       Pipeline        |
+ | JWT + bcrypt     |          +-----------------------+
+ +------------------+                     |
+          |                                |
+          v                                v
+ +------------------+            PDF Text Extraction
+ |    MongoDB       |                  (PyMuPDF)
+ | User Storage     |                       |
+ +------------------+                       v
+                                   Text Chunking
+                              (Recursive Splitter)
+                                            |
+                                            v
+                                  Generate Embeddings
+                              (Sentence Transformers)
+                                            |
+                                            v
+                                  FAISS Vector Store
+                                            |
+                                            v
+
+User Question
+      |
+      v
+Question Embedding
+      |
+      v
+Similarity Search (FAISS)
+      |
+      v
+Retrieve Relevant Chunks
+      |
+      v
+Context + Question
+      |
+      v
+OpenRouter LLM API
+(Llama / DeepSeek / Other Models)
+      |
+      v
+Generated Answer
+      |
+      v
+React UI Response
+```
 
 ---
 
