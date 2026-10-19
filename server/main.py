@@ -8,17 +8,31 @@ from auth import (
     get_user_by_email, create_user
 )
 import os
+import tempfile
+from collections import OrderedDict
 from dotenv import load_dotenv
+from fastapi.concurrency import run_in_threadpool
 
 load_dotenv()
 
 app = FastAPI()
-qa_chain = None
-PDF_PATH = "storage/temp.pdf"
+
+# Per-user QA chains (keyed by email), in memory. Capped so memory can't grow unbounded;
+# the least-recently-used user is evicted and must re-upload.
+MAX_USERS_IN_MEMORY = int(os.getenv("MAX_USERS_IN_MEMORY", "20"))
+MAX_UPLOAD_MB = int(os.getenv("MAX_UPLOAD_MB", "10"))
+user_chains: "OrderedDict[str, object]" = OrderedDict()
+
+# Comma-separated list of allowed frontend origins
+ALLOWED_ORIGINS = [
+    o.strip().rstrip("/")
+    for o in os.getenv("FRONTEND_URL", "http://localhost:5173").split(",")
+    if o.strip()
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -63,6 +77,8 @@ async def login(user: User):
         token = create_access_token({"sub": user.email})
         return {"access_token": token, "token_type": "bearer"}
 
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"LOGIN ERROR: {e}")
         raise HTTPException(status_code=500, detail="Server error during login")
@@ -70,18 +86,33 @@ async def login(user: User):
 @app.post("/upload")
 async def upload_pdf(file: UploadFile = File(...), user=Depends(get_current_user)):
     contents = await file.read()
-    os.makedirs("storage", exist_ok=True)
-    with open(PDF_PATH, "wb") as f:
-        f.write(contents)
-    text = extract_text_from_pdf(PDF_PATH)
-    global qa_chain
-    qa_chain = create_qa_chain(text)
+    if len(contents) > MAX_UPLOAD_MB * 1024 * 1024:
+        raise HTTPException(status_code=413, detail=f"File too large (max {MAX_UPLOAD_MB} MB)")
+
+    # Per-request temp file so concurrent users never overwrite each other
+    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
+        tmp.write(contents)
+        tmp_path = tmp.name
+    try:
+        text = await run_in_threadpool(extract_text_from_pdf, tmp_path)
+    finally:
+        os.remove(tmp_path)
+
+    if not text.strip():
+        raise HTTPException(status_code=400, detail="Could not extract any text from this PDF.")
+
+    chain = await run_in_threadpool(create_qa_chain, text)
+    user_chains[user] = chain
+    user_chains.move_to_end(user)
+    while len(user_chains) > MAX_USERS_IN_MEMORY:
+        user_chains.popitem(last=False)
     return {"message": "PDF processed successfully"}
 
 @app.post("/ask")
 async def ask_question(q: Question, user=Depends(get_current_user)):
-    global qa_chain
-    if not qa_chain:
+    chain = user_chains.get(user)
+    if not chain:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Please upload a PDF first.")
-    answer = qa_chain.invoke({"question": q.query})["result"]
-    return {"answer": answer}
+    user_chains.move_to_end(user)
+    result = await run_in_threadpool(chain.invoke, {"question": q.query})
+    return {"answer": result["result"]}
