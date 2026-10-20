@@ -36,12 +36,21 @@ def extract_text_from_pdf(file_path: str) -> str:
         print(f"Error reading PDF: {e}")
         return ""
 
+# === EMBEDDING MODEL (loaded once and shared; loading one per upload would exhaust RAM) ===
+_embeddings = None
+
+def _get_embeddings():
+    global _embeddings
+    if _embeddings is None:
+        _embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
+    return _embeddings
+
 # === BUILD VECTORSTORE IN MEMORY ===
 def get_vectorstore(resume_text: str):
     splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=30)
     docs = splitter.create_documents([resume_text], metadatas=[{"source": "resume"}])
 
-    embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
+    embeddings = _get_embeddings()
     vectorstore = FAISS.from_documents(docs, embeddings)
     return vectorstore
 

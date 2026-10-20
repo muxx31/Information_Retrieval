@@ -2,8 +2,17 @@ from passlib.context import CryptContext
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
 from db import users_collection  # Your MongoDB collection
+import os
+from dotenv import load_dotenv
 
-SECRET_KEY = "njdnqwjndjkwwdbnjwbnd"
+load_dotenv()
+
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise RuntimeError(
+        "SECRET_KEY environment variable is not set. Generate one with: "
+        'python -c "import secrets; print(secrets.token_urlsafe(32))"'
+    )
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
