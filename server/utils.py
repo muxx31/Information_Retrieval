@@ -36,21 +36,12 @@ def extract_text_from_pdf(file_path: str) -> str:
         print(f"Error reading PDF: {e}")
         return ""
 
-# === EMBEDDING MODEL (loaded once, reused across uploads) ===
-_embeddings = None
-
-def get_embeddings():
-    global _embeddings
-    if _embeddings is None:
-        _embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
-    return _embeddings
-
 # === BUILD VECTORSTORE IN MEMORY ===
 def get_vectorstore(resume_text: str):
     splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=30)
     docs = splitter.create_documents([resume_text], metadatas=[{"source": "resume"}])
 
-    embeddings = get_embeddings()
+    embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
     vectorstore = FAISS.from_documents(docs, embeddings)
     return vectorstore
 
@@ -98,7 +89,7 @@ def create_qa_chain(resume_text: str):
         temperature=0.7,
         max_tokens=512,
         default_headers={
-            "HTTP-Referer": os.getenv("FRONTEND_URL", "http://localhost:5173"),
+            "HTTP-Referer": "http://localhost:3000",  # Optional: for analytics
             "X-Title": "PDF Resume Analyzer",  # Optional: for analytics
         }
     )
