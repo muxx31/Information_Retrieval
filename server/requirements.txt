@@ -3,7 +3,7 @@ uvicorn
 python-multipart
 PyMuPDF
 faiss-cpu
-langchain
+langchain==0.1.20
 langchain-community
 langchain-openai
 sentence-transformers
