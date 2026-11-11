@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import fitz  # PyMuPDF
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -13,6 +14,8 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
+logger = logging.getLogger(__name__)
+
 # === CONFIGURATION ===
 EMBEDDING_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
@@ -24,16 +27,18 @@ try:
     with open(DATA_PATH, "r", encoding="utf-8") as f:
         JOB_SKILLS_DATA = json.load(f)
 except Exception as e:
-    print(f"Failed to load job skills: {e}")
+    logger.warning("Failed to load job skills: %s", e)
     JOB_SKILLS_DATA = []
 
 # === EXTRACT TEXT FROM PDF ===
 def extract_text_from_pdf(file_path: str) -> str:
     try:
-        doc = fitz.open(file_path)
-        return "".join(page.get_text() for page in doc)
-    except Exception as e:
-        print(f"Error reading PDF: {e}")
+        # Context manager closes the file handle even if extraction fails
+        with fitz.open(file_path) as doc:
+            return "".join(page.get_text() for page in doc)
+    except Exception:
+        # Return "" so the caller can show a clear 400; the real cause is logged
+        logger.exception("Error reading PDF")
         return ""
 
 # === EMBEDDING MODEL (loaded once and shared; loading one per upload would exhaust RAM) ===
